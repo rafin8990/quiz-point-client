@@ -36,31 +36,49 @@ import type { Quiz } from "@/types";
 export function QuizManagement() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([
     {
-      id: "1",
+      id: 1,
       title: "JavaScript Fundamentals",
       description: "Test your knowledge of JavaScript basics",
-      category: "Technology",
-      difficulty: "medium",
-      questionsCount: 20,
-      duration: 30,
+      created_by: 1,
+      time_limit_minutes: 30,
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 30 * 60000).toISOString(),
+      show_correct_answer: true,
+      total_points: 100,
+      status: "published",
+      results_published: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
     {
-      id: "2",
+      id: 2,
       title: "React Advanced Concepts",
       description: "Advanced React patterns and concepts",
-      category: "Technology",
-      difficulty: "hard",
-      questionsCount: 25,
-      duration: 45,
+      created_by: 1,
+      time_limit_minutes: 45,
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 45 * 60000).toISOString(),
+      show_correct_answer: true,
+      total_points: 100,
+      status: "published",
+      results_published: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
     {
-      id: "3",
+      id: 3,
       title: "TypeScript Basics",
       description: "Introduction to TypeScript",
-      category: "Technology",
-      difficulty: "easy",
-      questionsCount: 15,
-      duration: 20,
+      created_by: 1,
+      time_limit_minutes: 20,
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 20 * 60000).toISOString(),
+      show_correct_answer: true,
+      total_points: 100,
+      status: "published",
+      results_published: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
   ]);
 
@@ -72,16 +90,27 @@ export function QuizManagement() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
-    difficulty: "easy" as "easy" | "medium" | "hard",
-    questionsCount: 0,
-    duration: 0,
+    time_limit_minutes: 0,
+    status: "draft" as "draft" | "published" | "closed",
+    total_points: 0,
+    show_correct_answer: true,
   });
 
   const handleCreate = () => {
     const newQuiz: Quiz = {
-      id: Date.now().toString(),
-      ...formData,
+      id: Date.now(),
+      title: formData.title,
+      description: formData.description || null,
+      created_by: 1,
+      time_limit_minutes: formData.time_limit_minutes,
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + formData.time_limit_minutes * 60000).toISOString(),
+      show_correct_answer: formData.show_correct_answer,
+      total_points: formData.total_points,
+      status: formData.status,
+      results_published: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
     setQuizzes([...quizzes, newQuiz]);
     setIsCreateDialogOpen(false);
@@ -92,11 +121,11 @@ export function QuizManagement() {
     setEditingQuiz(quiz);
     setFormData({
       title: quiz.title,
-      description: quiz.description,
-      category: quiz.category,
-      difficulty: quiz.difficulty,
-      questionsCount: quiz.questionsCount,
-      duration: quiz.duration,
+      description: quiz.description || "",
+      time_limit_minutes: quiz.time_limit_minutes || 0,
+      status: quiz.status,
+      total_points: quiz.total_points,
+      show_correct_answer: quiz.show_correct_answer,
     });
     setIsEditDialogOpen(true);
   };
@@ -105,7 +134,18 @@ export function QuizManagement() {
     if (!editingQuiz) return;
     setQuizzes(
       quizzes.map((q) =>
-        q.id === editingQuiz.id ? { ...editingQuiz, ...formData } : q
+        q.id === editingQuiz.id
+          ? {
+              ...editingQuiz,
+              title: formData.title,
+              description: formData.description || null,
+              time_limit_minutes: formData.time_limit_minutes,
+              status: formData.status,
+              total_points: formData.total_points,
+              show_correct_answer: formData.show_correct_answer,
+              updated_at: new Date().toISOString(),
+            }
+          : q
       )
     );
     setIsEditDialogOpen(false);
@@ -113,7 +153,7 @@ export function QuizManagement() {
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this quiz?")) {
       setQuizzes(quizzes.filter((q) => q.id !== id));
     }
@@ -123,16 +163,16 @@ export function QuizManagement() {
     setFormData({
       title: "",
       description: "",
-      category: "",
-      difficulty: "easy",
-      questionsCount: 0,
-      duration: 0,
+      time_limit_minutes: 0,
+      status: "draft",
+      total_points: 0,
+      show_correct_answer: true,
     });
   };
 
   const filteredQuizzes = quizzes.filter((quiz) =>
     quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (quiz.description && quiz.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -183,63 +223,72 @@ export function QuizManagement() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Input
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) =>
-                        setFormData({ ...formData, category: e.target.value })
-                      }
-                      placeholder="e.g., Technology"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty">Difficulty</Label>
+                    <Label htmlFor="status">Status</Label>
                     <Select
-                      value={formData.difficulty}
-                      onValueChange={(value: "easy" | "medium" | "hard") =>
-                        setFormData({ ...formData, difficulty: value })
+                      value={formData.status}
+                      onValueChange={(value: "draft" | "published" | "closed") =>
+                        setFormData({ ...formData, status: value })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="time_limit_minutes">Time Limit (minutes)</Label>
+                    <Input
+                      id="time_limit_minutes"
+                      type="number"
+                      value={formData.time_limit_minutes}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          time_limit_minutes: parseInt(e.target.value) || 0,
+                        })
+                      }
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="questionsCount">Number of Questions</Label>
+                    <Label htmlFor="total_points">Total Points</Label>
                     <Input
-                      id="questionsCount"
+                      id="total_points"
                       type="number"
-                      value={formData.questionsCount}
+                      value={formData.total_points}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          questionsCount: parseInt(e.target.value) || 0,
+                          total_points: parseInt(e.target.value) || 0,
                         })
                       }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="duration">Duration (minutes)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      value={formData.duration}
-                      onChange={(e) =>
+                    <Label htmlFor="show_correct_answer">Show Correct Answer</Label>
+                    <Select
+                      value={formData.show_correct_answer ? "true" : "false"}
+                      onValueChange={(value) =>
                         setFormData({
                           ...formData,
-                          duration: parseInt(e.target.value) || 0,
+                          show_correct_answer: value === "true",
                         })
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -280,10 +329,10 @@ export function QuizManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Difficulty</TableHead>
-              <TableHead>Questions</TableHead>
-              <TableHead>Duration</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Time Limit</TableHead>
+              <TableHead>Total Points</TableHead>
+              <TableHead>Show Answers</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -298,22 +347,22 @@ export function QuizManagement() {
               filteredQuizzes.map((quiz) => (
                 <TableRow key={quiz.id}>
                   <TableCell className="font-medium">{quiz.title}</TableCell>
-                  <TableCell>{quiz.category}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        quiz.difficulty === "easy"
+                        quiz.status === "published"
                           ? "default"
-                          : quiz.difficulty === "medium"
+                          : quiz.status === "draft"
                           ? "secondary"
                           : "destructive"
                       }
                     >
-                      {quiz.difficulty}
+                      {quiz.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{quiz.questionsCount}</TableCell>
-                  <TableCell>{quiz.duration} min</TableCell>
+                  <TableCell>{quiz.time_limit_minutes || "N/A"} min</TableCell>
+                  <TableCell>{quiz.total_points}</TableCell>
+                  <TableCell>{quiz.show_correct_answer ? "Yes" : "No"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -371,62 +420,72 @@ export function QuizManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-category">Category</Label>
-                  <Input
-                    id="edit-category"
-                    value={formData.category}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-difficulty">Difficulty</Label>
+                  <Label htmlFor="edit-status">Status</Label>
                   <Select
-                    value={formData.difficulty}
-                    onValueChange={(value: "easy" | "medium" | "hard") =>
-                      setFormData({ ...formData, difficulty: value })
+                    value={formData.status}
+                    onValueChange={(value: "draft" | "published" | "closed") =>
+                      setFormData({ ...formData, status: value })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-time_limit_minutes">Time Limit (minutes)</Label>
+                  <Input
+                    id="edit-time_limit_minutes"
+                    type="number"
+                    value={formData.time_limit_minutes}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        time_limit_minutes: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-questionsCount">Number of Questions</Label>
+                  <Label htmlFor="edit-total_points">Total Points</Label>
                   <Input
-                    id="edit-questionsCount"
+                    id="edit-total_points"
                     type="number"
-                    value={formData.questionsCount}
+                    value={formData.total_points}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        questionsCount: parseInt(e.target.value) || 0,
+                        total_points: parseInt(e.target.value) || 0,
                       })
                     }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-duration">Duration (minutes)</Label>
-                  <Input
-                    id="edit-duration"
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) =>
+                  <Label htmlFor="edit-show_correct_answer">Show Correct Answer</Label>
+                  <Select
+                    value={formData.show_correct_answer ? "true" : "false"}
+                    onValueChange={(value) =>
                       setFormData({
                         ...formData,
-                        duration: parseInt(e.target.value) || 0,
+                        show_correct_answer: value === "true",
                       })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Yes</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

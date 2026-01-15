@@ -229,7 +229,7 @@ function LeaderboardPage() {
                   <YAxis />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                    formatter={(value: number) => [`${value} participants`, 'Count']}
+                    formatter={(value: number | undefined) => [`${value ?? 0} participants`, 'Count']}
                   />
                   <Legend />
                   <Bar 
@@ -271,10 +271,12 @@ function LeaderboardPage() {
                     />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'score') return [`${value} / ${quiz.total_points}`, 'Score'];
-                        if (name === 'percentage') return [`${value}%`, 'Percentage'];
-                        return [value, name];
+                      formatter={(value: number | undefined, name: string | undefined) => {
+                        const val = value ?? 0;
+                        const nameStr = name ?? '';
+                        if (nameStr === 'score') return [`${val} / ${quiz.total_points}`, 'Score'];
+                        if (nameStr === 'percentage') return [`${val}%`, 'Percentage'];
+                        return [val, nameStr];
                       }}
                       labelFormatter={(label) => `Rank ${label}`}
                     />
@@ -336,7 +338,7 @@ function LeaderboardPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent, value }) => value > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                      label={({ name, percent, value }) => value > 0 && percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
@@ -350,7 +352,7 @@ function LeaderboardPage() {
                     </Pie>
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                      formatter={(value: number) => [`${value} participants`, 'Count']}
+                      formatter={(value: number | undefined) => [`${value ?? 0} participants`, 'Count']}
                     />
                     <Legend />
                   </PieChart>
@@ -382,10 +384,12 @@ function LeaderboardPage() {
                     <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 11 }} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'score') return [`${value} / ${quiz.total_points}`, 'Score'];
-                        if (name === 'percentage') return [`${value}%`, 'Percentage'];
-                        return [value, name];
+                      formatter={(value: number | undefined, name: string | undefined) => {
+                        const val = value ?? 0;
+                        const nameStr = name ?? '';
+                        if (nameStr === 'score') return [`${val} / ${quiz.total_points}`, 'Score'];
+                        if (nameStr === 'percentage') return [`${val}%`, 'Percentage'];
+                        return [val, nameStr];
                       }}
                     />
                     <Legend />
